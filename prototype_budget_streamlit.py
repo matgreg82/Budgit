@@ -56,6 +56,38 @@ def extract_pdf_transactions(file):
     return df
 
 if uploaded_file:
+    CATEGORIES = {
+    "Épicerie": ["maxi", "iga", "kim phat", "lidl", "supermarché"],
+    "Restaurants": ["mcdonald", "subway", "pizza", "restaurant"],
+    "Bars / Alcool": ["saq", "bar", "pub", "alcool"],
+    "Transport": ["uber", "essence", "station", "métro"],
+    "Abonnements": ["netflix", "spotify", "vidéotron", "abonnement"],
+    "Santé": ["dentiste", "pharmacie", "lunette"],
+    "Autres": []
+}
+
+def categorize(description):
+    description = description.lower()
+    for cat, keywords in CATEGORIES.items():
+        if any(word in description for word in keywords):
+            return cat
+    return "Autres"
+
+# Appliquer la catégorisation automatique
+df["Catégorie auto"] = df["Description"].apply(categorize)
+
+# Interface de correction manuelle
+st.subheader("🧾 Catégorisation des transactions")
+for i in df.index:
+    df.at[i, "Catégorie"] = st.selectbox(
+        f"Catégorie pour '{df.at[i, 'Description']}'",
+        options=list(CATEGORIES.keys()),
+        index=list(CATEGORIES.keys()).index(df.at[i, "Catégorie auto"]),
+        key=f"cat_{i}"
+    )
+
+st.markdown("### ✅ Dépenses avec catégories")
+st.dataframe(df[["Date", "Description", "Montant", "Catégorie"]])
     st.markdown("### 💳 Dépenses réelles extraites")
     df_depenses = extract_pdf_transactions(uploaded_file)
     st.dataframe(df_depenses)
